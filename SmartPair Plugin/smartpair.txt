@@ -1,0 +1,51 @@
+ File: smartpair.vim
+ Vim global plugin for automatically closing braces,
+ quotemarks, and other char pairs 
+ Version: 0.1
+ Last Modified: 2010 Oct 15
+ Maintainer: Samolof <samolof@gmail.com>
+ License:   This file is placed in the public domain.
+
+To enable, create the .vim/plugin subdirectory in your 
+home directory if it doesn't 
+already exist and place this file in it.
+If enabled, vim will automatically insert the closing 
+half of a brace, quote mark or any other 
+character (or multi-character) defined in the
+cpCharPairs dictionary.
+Use the <TAB> key to navigate to just outside the immediate close pair.
+To avoid auto insertion tap the character twice. E.g tapping {{ 
+inserts { without the closing }
+
+Characters for which this works (also works for multi-character pairs) 
+can be set by defining the cpCharPairs dictionary in your vimrc file. 
+For example:
+
+	let cpCharPairs={ '[' : ']'  ,     '(' : ')'   , '\*' : '*\' }
+
+The plugin is enabled by default. To turn it off by default 
+add this line to your vimrc file:
+
+	let g:SmartPairsDefault=Off
+
+You may also define a mapping for toggling it on/off by 
+mapping a key or command to <Plug>SmartPairsToggle. 
+For e.g in my vimrc I have mapped the <F5> key:
+
+	nmap <F5>   <Plug>SmartPairsToggle
+
+The default toggle command is \p in normal mode.
+
+
+
+Commands:					*Smartp*
+:Smartp {cmd} [{args} ] 
+	{cmd} is either:
+	'remove'	Remove one or more pairs from the set. 
+			Each arg should be the 
+			opening character(s) of the pair
+			E.g :Smartp remove { [ ( 
+	'show'		Show the current set of mapped char pairs
+	'default'	Restore the default set 
+	'add'		Add new pairs e.g add { } \* *\
+	

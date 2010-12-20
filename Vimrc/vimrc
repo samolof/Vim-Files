@@ -1,0 +1,213 @@
+"set autoindent
+"set cindent
+
+set encoding=utf-8
+set smartindent
+set number
+syntax on
+
+"Find tags in same directory, one level higher and in all subdirectories
+set tags=./tags,./../tags,./*/tags
+
+"Map [{ and <C-O> so we can move to startinsert of current scope and map return to previous position quickly in files with C style braces
+imap <F10>  <ESC>[{
+nnoremap <F10> [{
+"nmap <F12>   <C-O>a
+
+imap <C-X><C-P> <F3>
+
+"location of template sources
+let s:HOME=$HOME
+
+
+"Include template headers
+autocmd bufnewfile *.java,*.m,*.hmm,*.c,*.cpp,*.h,*.py,*.hpp,*.html,*.jsp,*.xml call InitializeWithTemplate(expand("%:e"))
+
+"Modify date last modified and return cursor to original position
+autocmd Bufwritepre,filewritepre *.java,*.m,*.hmm,*.py,*.c,*.h,*.cpp,*.hpp,*.py,*.jsp,*.html,*.xml call ModifyDate()
+
+
+"Smartpair plug-in on by default
+let g:SmartPairsDefault="On"
+nmap <F5> <Plug>SmartPairsToggle
+:let g:cpCharPairs={'[':']','(':')','/*':'*/',"'":"'",'"':'"','<':'>'}
+
+
+"===VIM-LatexSuite===
+filetype plugin on
+set grepprg=grep\ -nH\ $*
+let g:tex_flavor='latex'
+"======================
+
+"Python indentation settings borrowed from internet
+"autocmd Filetype python setlocal expandtab shiftwidth=4 tabstob=8 formatoptions+=croq softtabstop=4 smartindent cinwords=if,elif,else,for,while,try,except,finally,def,class,with
+
+
+
+
+"Insert closing tags for (d)html, jsp, xml files
+nnoremap \hc :call InsertCloseTag()<CR>
+imap <F6> <Space><BS><Esc>\hca
+
+
+
+
+
+function InitializeWithTemplate(ftype)
+	"Insert header file
+	execute "so "  .s:HOME ."." .a:ftype .".vim"
+
+	"Obj-C set correct filetype and add matching opening bracket for bracket following nested pair
+	if a:ftype == "m" || a:ftype == "hmm"
+		set filetype=objc
+		inoremap <silent> ] ]<Space><BS><ESC>:call DoOpenBracket()<CR>a
+	endif
+
+
+	"Change .hpp/.hmm header file extension to .h 
+	"so we can invoke
+	"the correct C++/Obj-C header template by opening [filename].hpp 
+	"but still have it save as [filename].h
+	if a:ftype == "hpp" || a:ftype == "hmm"
+		exe "normal :f %:r.h\<CR>"
+	endif
+
+	"Insert filename, username and date created
+	exe "%g/File Name:.*/s//File Name: " .expand("%")
+	exe "%g/Date Created:.*/s//Date Created: " .strftime("%b %d,%Y")
+	exe "%g/Author:.*/s//Author: " .$USER
+	
+
+	"Some of the following are better off in their
+	"respective template .vim files but I'll centralize them 
+	"here for now
+	
+	"For java files insert class name	
+	if a:ftype == "java"
+		exe "%g/public class.*/s//public class " .expand("%:t:r")
+	endif
+
+	"Add Include Guards for C and C++ header files
+	if a:ftype == "h" || a:ftype == "hpp"
+		exe "%g/ifndef.*/s//ifndef __" .toupper(expand("%:t:r"))."__H__"
+		exe "%g/define.*/s//define __" .toupper(expand("%:t:r"))."__H__" 
+	endif
+
+	"For C , C++, and Obj-C add header of same name if it exists in current
+	"directory
+	if a:ftype == "c" || a:ftype == "cpp"|| a:ftype =="m"
+		let l:hname = expand("%:t:r").".h"
+		if findfile(l:hname) == l:hname 
+			if a:ftype == "m"
+				exe "%g/#import \"HEADER\".*/s//#import \"".l:hname ."\""
+			else
+				exe "%g/#include \"HEADER\".*/s//#include \"".l:hname ."\""
+			endif
+		else	
+			if a:ftype == "m"
+				exe "%g/#import \"HEADER\".*/s//"
+			else
+				exe "%g/#include \"HEADER\".*/s//"
+			endif
+		endif
+	endif
+
+	"Place cursor in startinsert position
+	if a:ftype == "html" || a:ftype =="jsp" || a:ftype =="py" || a:ftype=="xml" || a:ftype=="hmm"
+		normal Go
+		:start
+	elseif a:ftype == "c" || a:ftype == "java" || a:ftype =="cpp" 
+		exe "/main"
+		execute "normal $o \<Esc>\<Tab>\<Tab>"
+		:start
+	elseif a:ftype == "h" || a:ftype == "hpp"
+		normal G
+		exe "?#include"
+		normal $o
+		:start
+	elseif a:ftype =="m"
+		exe "/NSAuto"
+		exe "normal $o \<ESC>\<TAB>"
+		:start
+	endif
+endfunction
+
+
+function ModifyDate()
+	normal ma
+	try
+		exe "%g/Last Modified:.*/s//Last Modified: " .strftime("%c")
+	catch 
+		"file does not have template
+		"For some reason tis isn't working
+	finally
+		normal `a
+	endtry
+endfunction
+
+
+
+
+
+function DoOpenBracket()
+	let l:cpos=col(".")
+	normal mv
+	normal %
+	if col(".")==l:cpos
+		if search('[','b',line(".")) !=0
+			let @t='['
+			normal "tp
+		endif
+		exe "normal `vl"
+		return
+	endif
+	exe "normal `v"
+endfunction
+
+
+"Insert close tags for html
+"Thanks to Smylers http://www.stripery.com/vim/
+function! InsertCloseTag()
+	if &filetype == 'html' || &filetype == 'jsp'|| &filetype == 'jspf' ||&filetype == 'xml'
+		let UnaryTags = ' Area Base Br DD DT HR Img Input LI Link Meta P Param '
+
+		" remember current position
+		normal mz
+
+		"loop backwards looking for tags:
+		let Found = 0
+		while Found == 0
+			"find previous <, then go forwards one character and grab the first char
+			"plus entire word:
+			execute "normal ?\<LT>\<CR>l"
+			normal "zyl
+			let Tag = expand('<cword>')
+
+			"if this is a closing tag, skip back to its matching opening tag:
+			if @z == '/'
+				execute "normal ?\<LT>" . Tag . "\<CR>"
+
+			"if this is a unary tag, then position the cursor for the next 
+			"iteration
+			elseif match(UnaryTags, ' ' . Tag . ' ') > 0
+				normal h
+			"otherwise this is the tag that needs closing
+			else
+				let Found = 1
+
+			endif
+		endwhile
+
+		"create the closing tag and insert it:
+		let @z = '</' . Tag . '>'
+		normal `z
+		if col('.') == 1
+			normal "zP
+		else
+			normal "zp
+		endif
+	else "file is not HTML
+	
+	endif
+endfunction 
+
