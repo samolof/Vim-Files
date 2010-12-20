@@ -1,3 +1,5 @@
+"Copyright samolof (samolof@gmail.com)
+
 "set autoindent
 "set cindent
 
@@ -17,7 +19,7 @@ nnoremap <F10> [{
 imap <C-X><C-P> <F3>
 
 "location of template sources
-let s:HOME=$HOME
+let s:HOME="$HOME/"
 
 
 "Include template headers
@@ -55,7 +57,7 @@ imap <F6> <Space><BS><Esc>\hca
 
 function InitializeWithTemplate(ftype)
 	"Insert header file
-	execute "so "  .s:HOME ."." .a:ftype .".vim"
+	execute "so "  .s:HOME  .a:ftype .".vim"
 
 	"Obj-C set correct filetype and add matching opening bracket for bracket following nested pair
 	if a:ftype == "m" || a:ftype == "hmm"
