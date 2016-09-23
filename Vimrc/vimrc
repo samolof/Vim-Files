@@ -19,11 +19,11 @@ nnoremap <F10> [{
 imap <C-X><C-P> <F3>
 
 "location of template sources
-let s:HOME="$HOME/"
+let s:HOME="$HOME/.vim/"
 
 
 "Include template headers
-autocmd bufnewfile *.java,*.m,*.hmm,*.c,*.cpp,*.h,*.py,*.hpp,*.html,*.jsp,*.xml call InitializeWithTemplate(expand("%:e"))
+autocmd bufnewfile *.java,*.m,*.hmm,*.c,*.cpp,*.h,*.py,*.hpp,*.html,*.jsp,*.xml,*.gm call InitializeWithTemplate(expand("%:e"))
 
 "Modify date last modified and return cursor to original position
 autocmd Bufwritepre,filewritepre *.java,*.m,*.hmm,*.py,*.c,*.h,*.cpp,*.hpp,*.py,*.jsp,*.html,*.xml call ModifyDate()
@@ -32,7 +32,7 @@ autocmd Bufwritepre,filewritepre *.java,*.m,*.hmm,*.py,*.c,*.h,*.cpp,*.hpp,*.py,
 "Smartpair plug-in on by default
 let g:SmartPairsDefault="On"
 nmap <F5> <Plug>SmartPairsToggle
-:let g:cpCharPairs={'[':']','(':')','/*':'*/',"'":"'",'"':'"','<':'>'}
+:let g:cpCharPairs={'[':']','(':')','/*':'*/',"'":"'",'"':'"'}
 
 
 "===VIM-LatexSuite===
@@ -52,6 +52,8 @@ nnoremap \hc :call InsertCloseTag()<CR>
 imap <F6> <Space><BS><Esc>\hca
 
 
+"TEMP
+autocmd bufnewfile *.cp exe "normal :f %:r.cpp\<CR>"
 
 
 
@@ -74,10 +76,16 @@ function InitializeWithTemplate(ftype)
 		exe "normal :f %:r.h\<CR>"
 	endif
 
+	"Similarly for .gm files (.go files with template)
+	if a:ftype == "gm" 
+		exe "normal :f %:r.go\<CR>"
+	endif
+
+
 	"Insert filename, username and date created
-	exe "%g/File Name:.*/s//File Name: " .expand("%")
-	exe "%g/Date Created:.*/s//Date Created: " .strftime("%b %d,%Y")
-	exe "%g/Author:.*/s//Author: " .$USER
+	exe ":silent %g/File Name:.*/s//File Name: " .expand("%")
+	exe ":silent %g/Date Created:.*/s//Date Created: " .strftime("%b %d,%Y")
+	exe ":silent %g/Author:.*/s//Author: " .$USER
 	
 
 	"Some of the following are better off in their
@@ -114,24 +122,6 @@ function InitializeWithTemplate(ftype)
 		endif
 	endif
 
-	"Place cursor in startinsert position
-	if a:ftype == "html" || a:ftype =="jsp" || a:ftype =="py" || a:ftype=="xml" || a:ftype=="hmm"
-		normal Go
-		:start
-	elseif a:ftype == "c" || a:ftype == "java" || a:ftype =="cpp" 
-		exe "/main"
-		execute "normal $o \<Esc>\<Tab>\<Tab>"
-		:start
-	elseif a:ftype == "h" || a:ftype == "hpp"
-		normal G
-		exe "?#include"
-		normal $o
-		:start
-	elseif a:ftype =="m"
-		exe "/NSAuto"
-		exe "normal $o \<ESC>\<TAB>"
-		:start
-	endif
 endfunction
 
 
